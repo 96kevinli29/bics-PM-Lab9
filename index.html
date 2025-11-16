@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="scroll-smooth">
 
 <head>
   <meta charset="utf-8" />
@@ -34,7 +34,7 @@
       font-family: 'Playfair Display', serif;
     }
 
-    /* TOC */
+    /* --- TOC Improvements --- */
     .toc-fixed {
       position: fixed;
       top: 0;
@@ -47,10 +47,48 @@
       overflow-y: auto;
       z-index: 50;
       border-right: 1px solid rgba(148, 163, 184, 0.2);
+      /* Added transition for mobile */
+      transform: translateX(-100%);
+      transition: transform .3s ease;
+    }
+    
+    /* Desktop view */
+    @media (min-width: 1024px) {
+      .toc-fixed {
+        transform: translateX(0);
+      }
+    }
+
+    .toc-fixed.open {
+      transform: translateX(0);
+    }
+    
+    .toc-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 49;
+      opacity: 0;
+      transition: opacity .3s ease;
+      pointer-events: none;
+    }
+
+    .toc-overlay.open {
+      opacity: 1;
+      pointer-events: auto;
     }
 
     .toc-title {
       letter-spacing: .08em;
+    }
+    
+    /* Using OL for semantic list */
+    .toc-list {
+      list-style: none;
+      padding-left: 0;
     }
 
     .toc-link {
@@ -82,10 +120,17 @@
       padding-left: .5rem;
       background: linear-gradient(to right, rgba(99, 102, 241, 0.16), transparent);
     }
+    /* --- End TOC Improvements --- */
+
 
     .main-content {
-      margin-left: 270px;
       min-height: 100vh;
+    }
+    
+    @media (min-width: 1024px) {
+      .main-content {
+        margin-left: 270px;
+      }
     }
 
     .hero-gradient {
@@ -134,6 +179,7 @@
       font-weight: 600;
       display: inline-flex;
       align-items: center;
+      justify-content: center; /* Added for consistency */
       gap: .4rem;
       font-size: .85rem;
       box-shadow: 0 12px 30px rgba(79, 70, 229, 0.4);
@@ -144,6 +190,12 @@
       background: var(--accent-dark);
       transform: translateY(-1px);
       box-shadow: 0 18px 40px rgba(79, 70, 229, 0.55);
+    }
+    
+    /* Smaller button variant for team card */
+    .btn-primary.btn-sm {
+      padding: .5rem 1rem;
+      font-size: .75rem;
     }
 
     .step-badge {
@@ -163,31 +215,74 @@
       border: 1px solid rgba(79, 70, 229, 0.2);
       background: linear-gradient(135deg, rgba(129, 140, 248, 0.12), rgba(219, 234, 254, 0.5));
     }
+    
+    /* --- Rubric Table Style --- */
+    .rubric-table {
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.875rem;
+    }
+    .rubric-table th {
+      background-color: #f8fafc;
+      padding: 0.75rem 1rem;
+      font-weight: 600;
+      color: #334155;
+      border-bottom: 2px solid #e2e8f0;
+    }
+    .rubric-table td {
+      padding: 0.75rem 1rem;
+      color: #475569;
+      border-bottom: 1px solid #f1f5f9;
+    }
+    .rubric-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+    .rubric-table tbody tr:nth-child(even) {
+      background-color: #fcfdff;
+    }
+    .rubric-table td:last-child,
+    .rubric-table th:last-child {
+      text-align: center;
+    }
+    .rubric-table tr:last-child td {
+      font-weight: 600;
+      color: #1e293b;
+    }
+    .rubric-table tr:last-child td:first-child {
+      text-align: right;
+    }
 
-    @media (max-width: 1024px) {
-      .toc-fixed {
-        transform: translateX(-100%);
-        transition: transform .3s ease;
-      }
-
-      .toc-fixed.open {
-        transform: translateX(0);
-      }
-
-      .main-content {
-        margin-left: 0;
-      }
+    /* --- Course Team Image --- */
+    .team-avatar {
+      width: 64px;
+      height: 64px;
+      border-radius: 9999px;
+      margin-left: auto;
+      margin-right: auto;
+      margin-bottom: 0.75rem;
+      object-fit: cover;
+      border: 2px solid #e0e7ff;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
     }
   </style>
 
-  <base target="_blank">
+  <!-- 
+    REMOVED: <base target="_blank">
+    This is generally bad practice as it affects *all* links, including 
+    on-page anchors (like our TOC). It's better to add target="_blank"
+    selectively to external links.
+  -->
 </head>
 
 <body class="text-slate-800">
-  <!-- Mobile TOC toggle -->
-  <button id="menuToggle" class="fixed top-4 left-4 z-50 bg-white p-2.5 rounded-full shadow-lg border border-slate-200 md:hidden">
-    <i class="fas fa-bars text-slate-700 text-sm"></i>
+  <!-- Mobile TOC toggle: Added ARIA-label and icon swap -->
+  <button id="menuToggle" class="fixed top-4 left-4 z-[51] bg-white p-2.5 rounded-full shadow-lg border border-slate-200 lg:hidden" aria-label="Toggle navigation menu">
+    <i id="menuIconOpen" class="fas fa-bars text-slate-700 text-sm"></i>
+    <i id="menuIconClose" class="fas fa-times text-slate-700 text-sm hidden"></i>
   </button>
+  
+  <!-- TOC Overlay for mobile -->
+  <div id="tocOverlay" class="toc-overlay lg:hidden"></div>
 
   <!-- TOC -->
   <nav class="toc-fixed" id="toc">
@@ -195,41 +290,65 @@
     <h2 class="text-base font-semibold text-slate-50 mb-4 leading-snug">
       The “Future-Self”<br />Career Project
     </h2>
-    <div class="space-y-1 mt-4">
-      <a class="toc-link" href="#intro">
-        <span class="step">0.</span><span>Mission Briefing</span>
-      </a>
-      <a class="toc-link" href="#team">
-        <span class="step">1.</span><span>Course Team</span>
-      </a>
-      <a class="toc-link" href="#objectives">
-        <span class="step">2.</span><span>Learning Objectives</span>
-      </a>
-      <a class="toc-link" href="#tracks">
-        <span class="step">3.</span><span>Choose Tech Track</span>
-      </a>
-      <a class="toc-link" href="#targets">
-        <span class="step">4.</span><span>Pick Career Target</span>
-      </a>
-      <a class="toc-link" href="#plan">
-        <span class="step">5.</span><span>2-Year Strategy</span>
-      </a>
-      <a class="toc-link" href="#deliverables">
-        <span class="step">6.</span><span>Deliverables</span>
-      </a>
-      <a class="toc-link" href="#checklist">
-        <span class="step">7.</span><span>LaTeX Checklist</span>
-      </a>
-      <a class="toc-link" href="#rubric">
-        <span class="step">8.</span><span>Grading Rubric</span>
-      </a>
-      <a class="toc-link" href="#submission">
-        <span class="step">9.</span><span>Submission</span>
-      </a>
-      <a class="toc-link" href="#value">
-        <span class="step">10.</span><span>Why This Matters</span>
-      </a>
-    </div>
+    
+    <!-- Changed to semantic <ol> -->
+    <ol class="toc-list space-y-1 mt-4">
+      <li>
+        <a class="toc-link" href="#intro">
+          <span class="step">0.</span><span>Mission Briefing</span>
+        </a>
+      </li>
+      <li>
+        <a class="toc-link" href="#team">
+          <span class="step">1.</span><span>Course Team</span>
+        </a>
+      </li>
+      <li>
+        <a class="toc-link" href="#objectives">
+          <span class="step">2.</span><span>Learning Objectives</span>
+        </a>
+      </li>
+      <li>
+        <a class="toc-link" href="#tracks">
+          <span class="step">3.</span><span>Choose Tech Track</span>
+        </a>
+      </li>
+      <li>
+        <a class="toc-link" href="#targets">
+          <span class="step">4.</span><span>Pick Career Target</span>
+        </a>
+      </li>
+      <li>
+        <a class="toc-link" href="#plan">
+          <span class="step">5.</span><span>2-Year Strategy</span>
+        </a>
+      </li>
+      <li>
+        <a class="toc-link" href="#deliverables">
+          <span class="step">6.</span><span>Deliverables</span>
+        </a>
+      </li>
+      <li>
+        <a class="toc-link" href="#checklist">
+          <span class="step">7.</span><span>LaTeX Checklist</span>
+        </a>
+      </li>
+      <li>
+        <a class="toc-link" href="#rubric">
+          <span class="step">8.</span><span>Grading Rubric</span>
+        </a>
+      </li>
+      <li>
+        <a class="toc-link" href="#submission">
+          <span class="step">9.</span><span>Submission</span>
+        </a>
+      </li>
+      <li>
+        <a class="toc-link" href="#value">
+          <span class="step">10.</span><span>Why This Matters</span>
+        </a>
+      </li>
+    </ol>
   </nav>
 
   <!-- MAIN CONTENT -->
@@ -288,7 +407,7 @@
       </div>
     </section>
 
-    <!-- 1. COURSE TEAM -->
+    <!-- 1. COURSE TEAM (Replaced icons with image placeholders) -->
     <section class="py-14 bg-white" id="team">
       <div class="max-w-6xl mx-auto px-6 lg:px-10">
         <div class="flex items-baseline justify-between gap-4 mb-6">
@@ -298,43 +417,39 @@
           </div>
         </div>
         <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-5 text-sm">
-          <div class="card-soft p-4 text-center">
-            <div class="text-indigo-600 text-xl mb-1.5">
-              <i class="fa-solid fa-user-tie"></i>
-            </div>
+          <div class="card-soft p-5 text-center">
+            <img src="https://placehold.co/128x128/6366f1/FFFFFF?text=HL" alt="Headshot of Hongyang Li" class="team-avatar" 
+                 onerror="this.src='https://placehold.co/128x128/6366f1/FFFFFF?text=HL'">
             <h3 class="font-semibold text-slate-900 text-sm">Hongyang Li</h3>
-            <p class="text-xs text-slate-500 mb-2">Lab 9 Coordinator</p>
-            <a class="btn-primary text-[11px] justify-center" href="mailto:hongyang.li@uni.lu">
+            <p class="text-xs text-slate-500 mb-3">Lab 9 Coordinator</p>
+            <a class="btn-primary btn-sm" href="mailto:hongyang.li@uni.lu">
               <i class="fas fa-envelope text-[10px]"></i> Contact
             </a>
           </div>
-          <div class="card-soft p-4 text-center">
-            <div class="text-indigo-600 text-xl mb-1.5">
-              <i class="fa-solid fa-user-graduate"></i>
-            </div>
+          <div class="card-soft p-5 text-center">
+            <img src="https://placehold.co/128x128/6366f1/FFFFFF?text=DA" alt="Headshot of Daria Antropova" class="team-avatar"
+                 onerror="this.src='https://placehold.co/128x128/6366f1/FFFFFF?text=DA'">
             <h3 class="font-semibold text-slate-900 text-sm">Daria Antropova</h3>
-            <p class="text-xs text-slate-500 mb-2">Teaching Assistant</p>
-            <a class="btn-primary text-[11px] justify-center" href="mailto:daria.antropova@ext.uni.lu">
+            <p class="text-xs text-slate-500 mb-3">Teaching Assistant</p>
+            <a class="btn-primary btn-sm" href="mailto:daria.antropova@ext.uni.lu">
               <i class="fas fa-envelope text-[10px]"></i> Contact
             </a>
           </div>
-          <div class="card-soft p-4 text-center">
-            <div class="text-indigo-600 text-xl mb-1.5">
-              <i class="fa-solid fa-chalkboard-teacher"></i>
-            </div>
+          <div class="card-soft p-5 text-center">
+            <img src="httpsD://placehold.co/128x128/6366f1/FFFFFF?text=CW" alt="Headshot of Caesar Wu" class="team-avatar"
+                 onerror="this.src='https://placehold.co/128x128/6366f1/FFFFFF?text=CW'">
             <h3 class="font-semibold text-slate-900 text-sm">Caesar Wu</h3>
-            <p class="text-xs text-slate-500 mb-2">Teaching Assistant</p>
-            <a class="btn-primary text-[11px] justify-center" href="mailto:caesar.wu@uni.lu">
+            <p class="text-xs text-slate-500 mb-3">Teaching Assistant</p>
+            <a class="btn-primary btn-sm" href="mailto:caesar.wu@uni.lu">
               <i class="fas fa-envelope text-[10px]"></i> Contact
             </a>
           </div>
-          <div class="card-soft p-4 text-center">
-            <div class="text-indigo-600 text-xl mb-1.5">
-              <i class="fa-solid fa-user-graduate"></i>
-            </div>
+          <div class="card-soft p-5 text-center">
+            <img src="https://placehold.co/128x128/6366f1/FFFFFF?text=JX" alt="Headshot of Jingjing Xu" class="team-avatar"
+                 onerror="this.src='https://placehold.co/128x128/6366f1/FFFFFF?text=JX'">
             <h3 class="font-semibold text-slate-900 text-sm">Jingjing Xu</h3>
-            <p class="text-xs text-slate-500 mb-2">Teaching Assistant</p>
-            <a class="btn-primary text-[11px] justify-center" href="mailto:jingjing.xu@uni.lu">
+            <p class="text-xs text-slate-500 mb-3">Teaching Assistant</p>
+            <a class="btn-primary btn-sm" href="mailto:jingjing.xu@uni.lu">
               <i class="fas fa-envelope text-[10px]"></i> Contact
             </a>
           </div>
@@ -581,7 +696,7 @@
       </div>
     </section>
 
-    <!-- 8. RUBRIC -->
+    <!-- 8. RUBRIC (Added custom styled table) -->
     <section class="py-16 bg-slate-50" id="rubric">
       <div class="max-w-6xl mx-auto px-6 lg:px-10">
         <div class="flex items-baseline justify-between gap-4 mb-6">
@@ -592,39 +707,39 @@
             </h2>
           </div>
         </div>
-        <div class="overflow-x-auto card p-4">
+        <div class="overflow-x-auto card">
           <table class="rubric-table w-full">
             <thead>
               <tr>
-                <th class="w-2/5 text-left">Category</th>
-                <th class="w-2/5 text-left">Criteria</th>
-                <th class="w-1/5 text-center">Points</th>
+                <th class="w-2/5">Category</th>
+                <th class="w-2/5">Criteria</th>
+                <th class="w-1/5">Points</th>
               </tr>
             </thead>
             <tbody>
               <tr>
                 <td><strong>Strategic Plan Content</strong></td>
                 <td>Clear, coherent 2-year roadmap; includes courses, skills, projects, networking, milestones.</td>
-                <td class="text-center">/35</td>
+                <td>/35</td>
               </tr>
               <tr>
                 <td><strong>Future Resume</strong></td>
                 <td>Consistent with plan; tailored to chosen target; strong bullet points; plausible and ambitious.</td>
-                <td class="text-center">/25</td>
+                <td>/25</td>
               </tr>
               <tr>
                 <td><strong>LaTeX Proficiency</strong></td>
                 <td>Uses structure, lists, tables, formatting, and hyperlinks; compiles cleanly; professional layout.</td>
-                <td class="text-center">/25</td>
+                <td>/25</td>
               </tr>
               <tr>
                 <td><strong>Project Management Thinking</strong></td>
                 <td>Shows awareness of timeline, risks, and dependencies; clear link to the 3rd-year target.</td>
-                <td class="text-center">/15</td>
+                <td>/15</td>
               </tr>
               <tr>
-                <td colspan="2" class="text-right font-semibold">Total</td>
-                <td class="text-center font-semibold">/100</td>
+                <td colspan="2">Total</td>
+                <td>/100</td>
               </tr>
             </tbody>
           </table>
@@ -695,39 +810,92 @@
 
   <!-- JS: TOC scroll & highlight & mobile toggle -->
   <script>
-    // Smooth scroll
-    document.querySelectorAll('.toc-link').forEach(link => {
+    const toc = document.getElementById('toc');
+    const tocOverlay = document.getElementById('tocOverlay');
+    const menuBtn = document.getElementById('menuToggle');
+    const menuIconOpen = document.getElementById('menuIconOpen');
+    const menuIconClose = document.getElementById('menuIconClose');
+    const allTocLinks = document.querySelectorAll('.toc-link');
+
+    // Function to close the mobile menu
+    function closeMenu() {
+      toc.classList.remove('open');
+      tocOverlay.classList.remove('open');
+      menuIconOpen.classList.remove('hidden');
+      menuIconClose.classList.add('hidden');
+      menuBtn.setAttribute('aria-expanded', 'false');
+    }
+
+    // Function to open the mobile menu
+    function openMenu() {
+      toc.classList.add('open');
+      tocOverlay.classList.add('open');
+      menuIconOpen.classList.add('hidden');
+      menuIconClose.classList.remove('hidden');
+      menuBtn.setAttribute('aria-expanded', 'true');
+    }
+
+    // Toggle menu with button
+    menuBtn.addEventListener('click', () => {
+      if (toc.classList.contains('open')) {
+        closeMenu();
+      } else {
+        openMenu();
+      }
+    });
+
+    // Close menu when clicking overlay
+    tocOverlay.addEventListener('click', closeMenu);
+
+    // Close menu when clicking a link
+    allTocLinks.forEach(link => {
       link.addEventListener('click', e => {
-        e.preventDefault();
-        const id = link.getAttribute('href').slice(1);
-        const target = document.getElementById(id);
-        if (target) {
-          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        // We still want smooth scroll, but the default 
+        // behavior is handled by the browser `scroll-smooth` on <html>
+        
+        // Only close menu on mobile sizes
+        if (window.innerWidth < 1024) {
+          closeMenu();
         }
-        document.getElementById('toc').classList.remove('open');
       });
     });
 
-    // TOC active state
+    // TOC active state highlighting
     const sections = document.querySelectorAll('section[id]');
-    const tocLinks = document.querySelectorAll('.toc-link');
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
-          tocLinks.forEach(l => l.classList.remove('active'));
+          allTocLinks.forEach(l => l.classList.remove('active'));
           const active = document.querySelector(`.toc-link[href="#${entry.target.id}"]`);
           if (active) active.classList.add('active');
         }
       });
-    }, { rootMargin: '-30% 0px -70% 0px' });
-    sections.forEach(sec => observer.observe(sec));
-
-    // Mobile TOC toggle
-    const menuBtn = document.getElementById('menuToggle');
-    const toc = document.getElementById('toc');
-    menuBtn.addEventListener('click', () => {
-      toc.classList.toggle('open');
+    }, { 
+      rootMargin: '-30% 0px -70% 0px' 
+      /* This threshold tries to highlight the item 
+         when it's in the middle 30% of the screen */
     });
+    
+    sections.forEach(sec => observer.observe(sec));
+    
+    // Add smooth scrolling for browsers that don't support `scroll-smooth` CSS
+    // (This is a fallback, but modern browsers handle it with CSS)
+    allTocLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+            const href = this.getAttribute('href');
+            const target = document.querySelector(href);
+            if (href.startsWith('#') && target) {
+                e.preventDefault();
+                target.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+                // Optional: Update URL hash
+                // window.history.pushState(null, null, href);
+            }
+        });
+    });
+
   </script>
 </body>
 
